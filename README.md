@@ -1,126 +1,119 @@
 # CARe-BERT: BERT-Powered Graph Augmentation for Context-Aware Radiology Report Retrieval
 
-> How are factors like marketing strategies, appealing flavors, and the lack of centralized authorities contributing to the positive perception of electronic cigarettes on Twitter?
+> A new approach to training radiology report retrieval large language models without the need for time-consuming, manual data annotation by radiologists.
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5b74f79ee2904bfc92cc90fdbfdd3421)](https://app.codacy.com/gh/alex1xu/VapeVeritas-Twitter_E-cig_Surveillance/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade) ![Lines of code](https://img.shields.io/tokei/lines/github/alex1xu/VapeVeritas-Twitter_E-cig_Surveillance)
- ![Static Badge](https://img.shields.io/badge/%20-%20?style=flat&label=what%20is%20vaping%3F&labelColor=%23C841F9&color=%23555555&link=https%3A%2F%2Fwww.dshs.texas.gov%2Fvaping%2Fwhat-is-vaping)
-
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5b74f79ee2904bfc92cc90fdbfdd3421)](https://app.codacy.com/gh/alex1xu/VapeVeritas-Twitter_E-cig_Surveillance/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Made withJupyter](https://img.shields.io/badge/Made%20with-Jupyter-orange?style=for-the-badge&logo=Jupyter)](https://jupyter.org/try)
 
 ## 🚩 TL;DR
 
 <details>
   <summary><b>Spoiler</b></summary>
-  This study is the most comprehensive surveillance of e-cigarette perception on social media to date (8-year analysis, 18x previous largest study size). Natural Language Processing analysis of Twitter data indicates the success of e-cigarette brands in creating a positive image of their products among Twitter users. Factors potentially contributing to this phenomenon include marketing strategies, flavors, social appeal, the presence of echo chambers, the absence of central authorities, and the lack of implementation of Tobacco-21 legislation. There were also observed significant changes in tweet patterns during headline events, such as the E-cigarette Use Associated Lung Injury outbreak. This is also the first study to identify the long-term, ​​growing polarization of e-cig opinions and to quantify the dynamics of e-cig information dissemination. This understanding of the dynamics surrounding e-cig conversations will guide policymakers and health organizations in implementing more effective preventive and cessation strategies to address the e-cig epidemic.
+  
 </details>
 
 ## Table of Contents
 
 - [Why?](#why)
-- [Overview](#overview)
-- [Sentiment Analysis](#sentiment-analysis)
-- [Topic Modeling](#topic-modeling)
-- [Location and Emotion Analysis](#location-and-emotion-analysis)
-- [Information Dissemination](#information-dissemination)
-- [Chrome Extension](#chrome-extension)
+- [Novel Pipeline Overview](#novel-pipeline-overview)
+- [Model Evaluation](#model-evaluation)
 - [Conclusions](#conclusions)
 
 ## Why?
 
-Alarming statistics show that 7.7% of American high schoolers vape, prompting the CDC to label e-cigarettes (ECs) an epidemic. This usage may be due to social media, which often portrays JUUL positively, fueled by misinformation from social bots, paid influencers, and peers. Over half of youth vapers are unaware of e-cigs containing nicotine. Studies link exposure to e-cig ads on platforms like Facebook to increased usage. 
+![Screenshot 2024-07-23 193745](https://github.com/user-attachments/assets/4f57d3ea-3fc3-4916-9eee-9b7936c20f42)
 
-Understanding people’s perception of e-cigs, what information is spread, and how it is spread is crucial for policymakers and health organizations to inform intervention strategies. Twitter, which was rebranded to X after the completion of my study, offers an extensive, real-time, corpus of user-generated content. Its user base also aligns with the demographics of vapers. These features are advantageous over traditional surveys.
+You may have had chest X-rays taken before, but what you might not know is that afterward, radiologists will detail their observations in a free-text document called a radiology report. This past summer I worked in a lab at a University Hospital, where researchers spend hundreds of hours reviewing databases of these reports for cohort studies.
 
-To understand this large corpus of text, researchers turned to natural language processing, which is a field of AI that understands textual data. Over the past 5 years, numerous studies, including extensive work by USC Professor Jon-Patrick Allem, focus on specific health or legislative events and usually involve a single NLP technique or manual review. Important studies guiding recent legislation, like Jackler et al.'s of Stanford Tobacco Research Group claim that flavors and peer-to-peer marketing on Twitter drove JUUL’s dominance have not yet been quantitatively validated.
+![Screenshot 2024-07-23 193754](https://github.com/user-attachments/assets/90484424-8df6-48f8-96e9-82c16899fd0f)
 
-## Overview
+In natural language processing research, developing software to automate this process is called the radiology report retrieval task. Given a free text query and a collection of radiology reports, how can we create some algorithm that returns the reports relevant to the query?
 
-I scraped tweets to find matching e-cig-related keywords and specific criteria to avoid limits set by the Twitter API. After obtaining basic tweet information, tweets were rehydrated to obtain their latent features such as follower lists, retweets, and location.
+**Vector space** approaches are the major focus of current research.
 
-![Tweet extraction flowchart](images/vvfig1.png)
+https://github.com/user-attachments/assets/c0aeec47-f57a-4183-8401-9278081a097f
 
-This process resulted in 9 million tweets. After filtering out bots and duplicates, I focused on 8 million tweets from 2015 to 2023, a dataset 8 times longer and 18 times larger than the prior largest study in 2021.
+How does it work? Let’s imagine a high-dimensional space. Vector Space models represent each report and query as a vector, or embedding, in this space where the position stores the text’s meaning. Now, the cosine of the angle between the embeddings of reports to the query represents their similarity. Ideally, the related queries and reports are close while irrelated pairs are distant.
 
-![Tweet volume histogram](images/vvfig2.png)
-_Histogram of scraped tweets over time_
+The **Sentence-BERT**, or SBERT, transformer model has achieved state-of-the-art performance in the vector space approach.
 
-Right away we notice several peaks, corresponding to major events. There have been studies specifically dedicated to the EVALI outbreak which is the largest peak. The volume of recent tweets is less but increasing.
+It pools learned word embeddings into a single sentence embedding. Then, sentence embeddings are computed for three sample documents: a query text, a positive, or relevant report, and a negative, or irrelevant report. Through the triplet objective loss function, the distance between query and positive sentence embeddings is minimized, while the distance between query and negative sentence embeddings is maximized.
 
-## Sentiment Analysis
+However, datasets of these query, positive, and negative training triplets are **currently small and restricted as they require the expertise of radiologists to create**, which is hindering the advancement of better models.
 
-The first analysis I performed was the sentiment analysis task. I used the Valence Aware Dictionary for Sentiment Reasoning (VADER), a rule-based model that categorizes tweets into positive, negative, or neutral sentiments and gauges sentiment intensity. VADER is attuned to social media analysis and understands emojis, slang, and abbreviations.
+Motivated by this challenge, researchers have developed **weakly supervised learning** approaches to **programmatically generate training triplets**. Current approaches can handle queries consisting of the presence or absence of a single radiological finding.
 
-![Sentiment over time histogram](images/vvfig3.png)
-_Histogram of scraped tweets over time stratified by sentiment class_
+## Novel Pipeline Overview
 
-Overall there were 60% more tweets expressing positive than negative sentiment, which is consistent with existing literature, and suggests that e-cigarette brands ​​may have effectively created a positive image of their products among Twitter users. During the EVALI outbreak, however, the proportion of tweets expressing negative sentiment rose by 128%, likely due to increased media attention drawing more e-cigarette opponents into Twitter discussions.
+![Screenshot 2024-07-23 185824](https://github.com/user-attachments/assets/46e8fa05-08fd-4d82-a01d-8b0a9f0f3acd)
 
-In this same analysis, we can observe several trends suggesting that there is increased polarization of discussions on Twitter. First, the proportion of neutral tweets, which are more likely to be factual and non opinionated, has been markedly less in recent years.
+I improved upon existing approaches by creating **CARe-BERT**, a program to generate training triplets that teach SBERT to handle queries containing **multiple radiological findings**, and **the context of findings**, including anatomical and descriptive modifiers.
 
-![Sentiment over time scatterplot](images/vvfig6.png)
-_B) shows mean tweet sentiment over time stratified by sentiment class. Bar chart compares mean tweet sentiment of positive and negative sentiment class tweets_
+### Named Entity and Relationship Extraction
 
-Now instead of just the volume, we can look at the mean sentiment intensity on a day-by-day basis. Let's add a trendline. The R-squared values of the trend lines are low, meaning the date alone does not explain the variation in mean sentiment well, but this is expected. Overall, tweets expressing positive sentiment intensify by about 0.2% each year, and those expressing negative intensify by about .9% each year. Together with the p-value, the data suggests that there is weak and small, but still statistically significant polarization in sentiment over time. 
+![Screenshot 2024-07-23 184628](https://github.com/user-attachments/assets/c6e7af64-9cf5-494a-b667-69ce3ac8b161)
 
-During EVALI, there was even more polarization in negative sentiment, which is expected.
+The first stage is Named Entity Recognition (NER) and Relation Extraction (RE), which identify the clinically relevant terms that radiologists may be interested in querying. I utilize the RadGraph CXR radiology report inference dataset labeled using a joint NER and RE DyGIE++ model, initialized with PubMedBERT weights, as developed by Jain et al. (2021). Mentioned findings and anatomy in a report are identified by the model. Findings are identified in three levels of radiologists’ confidence: present, uncertain, and absent. It also identifies the relationships between these entities, including suggestive of, located at, and described as.
 
-Additionally, analyzing total mean intensity by sentiment we see that positive sentiment tweets had a small, but significantly greater sentiment intensity scores than negative sentiment tweets suggesting that those with positive sentiments are more vocal about their opinions on Twitter.
+Past methods to extract entities for training IR models have relied on lexicon or rule-based techniques. However, these methods are vulnerable to issues like spelling mistakes, form variability (e.g., "fluid in lungs" and "pulmonary edema" describe the same condition), and ambiguous abbreviations (e.g., does "LLQ" pertain to "left lower quadrant" or "left lower lobe," or neither). Furthermore, lexicon-based approaches often fall short of capturing the relationships between entities, which are crucial for understanding the semantics of a text, especially in cases where there are multiple radiological findings in the same sentence.
 
-## Topic Modeling
+### Knowledge Graph Construction
 
-Next, I used Latent Dirichlet Allocation (LDA) to identify the topics among JUUL tweets. LDA identified 20 topics in the full corpus and then I manually vetted them for relevance and generalizability and named each with an identifying phrase.
+![Screenshot 2024-07-23 184708](https://github.com/user-attachments/assets/40e2fbb9-1bb7-4e79-9a43-070b6aee0d04)
 
-![Topic bar chart](images/vvfig7.png)
-_Frequency of top 5 tweet topics stratified by sentiment class_
+The goal of this step is to transform each document into a collection of knowledge graphs, where each graph represents a cluster of related entities (Figure 1B). This is a necessary step as knowledge graphs are a more simplified and versatile representation of the original text (Luan et al., 2018). Each entity is represented as a node, and each relation is represented as a directed edge. The RadGraph schema inherently forms directed acyclic graphs (DAGs), although inaccuracies in the model’s output can cause cycles. These DAGs do not necessarily adhere to a tree structure, as a child node can have multiple parent nodes.
+Given the specific RadGraph schema, I renamed the "modify" relation to "described as," and reversed the edge direction for all such relations. This modification standardizes the directionality of relations, ensuring that "located at," "described as," and "suggestive of," which connect to additional information, all stem from, or direct outwards from, the radiological finding that is being modified. The resulting graph becomes more navigable, and in subsequent steps, it will facilitate the generation of more natural sentences.
 
-For tweets expressing positive sentiment, the top topics were vaping products, ​​social and community appeal, marketing, marijuana, and smoking cessation. Continuous exposure to tweets about new vaping products and marketing may contribute to user addition and catalyze future e-cig usage, which is a huge concern. For tweets expressing negative sentiment, the top two topics by far were health risks and anti-e-cigarette legislative action. 
+### Subgraph Permutation for Synthetic Query Generation
 
-![Topic histogram](images/vvfig8.png)
-_Histogram of tweet topics over time stratified by sentiment class_
+https://github.com/user-attachments/assets/792a37c0-5841-4103-93d7-4663b9041153
 
-There is heavy marketing and talks about flavors from 2015 to 2016. The prominence of these topics during JUUL's launch years for the first time quantitatively validates Jackler's 2019 hypothesis, which proposed that JUUL's rapid growth was primarily driven by its youth appeal through social media influencer promotions and enticing flavor options. More recently, there have been increasing talks of marijuana in e-cigarette-related conversations. 
+To create a large training set, generating numerous queries, matched documents (i.e. relevant, positive), and unmatched documents (i.e. irrelevant, negative) from a single graph is ideal. There should also be queries of different lengths and complexities to create a robust model. Achieving both objectives doesn't necessitate the usage of the entire graph for the creation of each query; instead, subgraphs can be leveraged to address these requirements.
 
-For tweets expressing negative sentiment, banning and health risks completely dominate, especially whenever there is mainstream media coverage, like the EVALI outbreak and JUUL’s MDO. This is a sign of productive conversation, and bringing more of it to the positive sentiment population would be beneficial.
+Most graphs created from the RadGraph inference dataset appear to have one or more roots, or nodes where the indegree is zero. These nodes are usually important findings of a radiology report, but radiologists may also be interested in searching for non-root terms. So, in my approach, I chose not to use a single node as the starting point for subgraph generation.
 
-## Location and Emotion Analysis
+The bitmasking technique was employed to permute through every possible subgraph of a knowledge graph. Although bitmasking has exponential time complexity, it remains efficient in this task as the number of nodes is relatively small.
 
-![US state sentiment map](images/vvfig9.png)
-_Mean tweet sentiment by state_
+For each bitmask, multiple depth-first search traversals were conducted to create synthetic queries. Each node was used as a starting point for the DFS of a subgraph. At each step of the traversal, if the current node is present in the mask, the node’s token value is appended to the synthetic query. If the current node is not present in the mask then its descendants are not visited. When traversing along a directed edge, the label of the relation is also appended. In cases where a node has multiple children, "and" is inserted between each child token’s label in the synthetic query. The choice of DFS is grounded in the idea that the children, or descriptors, of a node, will be closer together in the resulting query, mirroring the ordering in natural language. After the traversal, if any of the nodes of the mask were not visited, the entire mask was discarded. This indicates that the subgraph is not continuous, and therefore, not all modifiers are interrelated. Without this step, the dataset could become dominated by short queries, particularly when dealing with numerous incomplete large subgraphs.
 
-Next, I analyzed sentiment by region. Only four states had a negative mean sentiment score: North Dakota, Louisiana, Alabama, and Maine. Three out of these four states with negative mean sentiment intensity scores have passed Tobacco-21 (T21) legislation, a campaign aimed to raise the legal age of purchase of nicotine products to 21.
+![Screenshot 2024-07-23 185444](https://github.com/user-attachments/assets/e37c6ac5-c76a-4e37-b0b9-165ef97ac9f7)
 
-![T21 sentiment bar chart](images/vvfig10.png)
+### Document Augmentation to Create Hard Negatives
 
-In general, states that have acted upon T21 show significantly lower mean sentiment intensity scores compared to states that have not. This indicates a potential heightened awareness of the product's health risks among adolescents when T21 legislation is on the table.
+![Screenshot 2024-07-23 185510](https://github.com/user-attachments/assets/8c09d23a-1393-4af5-8a76-05a8ca946334)
 
-I fine-tuned a BERT transformer model on an annotated emotion dataset to classify each tweet into the emotion categories of joy, anger, fear, and neutral. 
+For a given synthetic query, the original sentence that it was sourced from can be used as its positive sample. However, finding unmatched documents to serve as negative examples poses a harder challenge. Randomly assigning non-positive documents may be too easily distinguishable from positive ones, limiting the effectiveness of the triplet objective function. To provide a more refined training signal, and because the key entities and relations described in a query are known, I chose to augment matched documents to produce a set of challenging negative examples (i.e. sentences that are similar to the positive sample but are not relevant to the query).
 
-![T21 emotion bar chart](images/vvfig11.png)
+One technique for this purpose is Label-wise Token Replacement (LwTR). The LwTR of a given document is implemented as follows: For each entity present in both the matched document and the synthetic query, a binomial distribution is used to determine whether it should be replaced. If an entity is indicated for replacement, it is substituted with another token drawn from a vocabulary in the RadGraph corpus. To ensure the replaced vocabulary is semantically similar to the original term, only tokens that share the same entity and outgoing relation type are considered, expanding upon previous approaches presented, which only took into account the entity type. Additionally, replacement tokens that share the same root as the current token are not considered.
 
-In states that have acted upon T21, the proportion of tweets that express neutral emotions is 20% less, and the proportion of tweets that express anger and fear is 20% greater. The association between emotions and T21 status is statistically significant (chi-square=128.19, p<0.001). Again, this is a further indication of polarization. It may also reflect a growing awareness of the risks associated with e-cig use among individuals who were previously neutral or uninformed. 
+By implementing this method, multiple distinct negative samples are generated for each positive document and query. This technique maximizes the lexical overlap between the query and negative samples while remaining incorrect to the query, making these hard negative training samples. Finally, these queries and associated positive and negative samples are assembled into triplets to serve as weakly-labeled training data.
 
-## Information Dissemination
+### PubMedBERT Transfer Learning
 
-To quantify the spread and structure of information dissemination I looked at diffusion trees. These are graphs where each node is a user, and an edge indicates a retweet. However, on Twitter, retweet references point to the original tweet and not the tweet that was directly responded to. So, I adopted the approach developed by Liang et al. (2019) by inferring the retweet relationships using users’ follower lists and retweet datetimes.
+![Screenshot 2024-07-23 185804](https://github.com/user-attachments/assets/c76c8f01-c6a8-4778-85b4-f61f76b212d6)
 
-![Example diffusion trees](images/vvfig12.png)
+SBERT was employed as the retrieval model. The model was trained using the triplet objective function, where, given a query q, a matched sentence m, and an unmatched sentence u, the network is fine-tuned to ensure that the distance between the embeddings of q and m is smaller than the distance between the embeddings of q and u by a margin ϵ. In other words, the function is defined as max(|| eq − em || − || eq − eu || + ϵ, 0) with eq, em, and eu representing the sentence embeddings for q, m, and u. Per Shi et al. (2022), ||·|| was cosine distance and ϵ = 0.5. At inference, the cosine similarity between the query embedding and the report sentence embedding is used to determine the level of relevance. The SBERT model was initialized with the weights of the Hugging Face PubMedBERT model, pre-trained on a corpus of all PubMed abstracts. Subsequently, it underwent fine-tuning over 7 epochs using the training data, comprising 289,158 triplets, generated by our proposed pipeline. The training process employed the AdamW optimizer with an initial learning rate of 2e-5.
 
-In total, I generated 245 diffusion trees from the last two months of November 2022. The structure of a tree can be classified as broadcast or peer-to-peer based on its structural virality, which is the average pairwise distance between nodes. Broadcast indicates that there is a central source disseminating information to many users, while peer-to-peer indicates that information is spreading virally through many connections. Normalized structural virality had a mean of 0.104, indicating broadcast. Yet, this value is still twice as viral as Liang et al’s recorded value of 0.05 in the context of Ebola. This suggests that information about EC is disseminated more extensively through peer-to-peer channels compared to other epidemics, rather than through coverage by health organizations like the CDC, which tend to disseminate information in a broadcast fashion.
+## Model Evaluation
 
-![Diffusion metrics bar chart](images/vvfig13.png)
+![Screenshot 2024-07-23 185611](https://github.com/user-attachments/assets/b3e362cc-6c9d-4571-a8ce-66bea52329cf)
 
-_Diffusion tree metrics_
+### Embedding Space Separation
 
-It is more nuanced when broken down by sentiment intensity. Negative sentiment diffusion trees spread with higher structural virality, network size, and network height compared to positive sentiment trees. So overall, negative sentiment diffusion trees reached a larger audience and tended to spread more virally compared to positive sentiment diffusion trees. Additionally, further analysis showed that 90% of all direct retweets shared the sentiment of the original tweet. Each tweet further removed from the original discussion had a 1.2 times increase in the likelihood of disagreement with the original tweet. These factors all indicate the presence of echo chambers within EC-related discussions. These structures may reinforce users' existing beliefs and make them less receptive to alternative perspectives. 
+![Screenshot 2024-07-23 185743](https://github.com/user-attachments/assets/3c24e12f-999a-4802-bd7d-26417ac53600)
 
-## Chrome Extension
+To assess the quality of the vector space model, I conducted an embedding space separation analysis. An ideal vector space model would demonstrate clear separation in the embedding space for queries with opposite or different meanings (opposite-modifier queries). To make queries of opposite meanings, I concatenate opposite modifiers with 13 common radiological findings. Modifiers fall into 3 categories, locational (e.g. “left” vs. “right”), descriptive (e.g. “streaky” vs. “patchy”), or observational (e.g. “presence of fluid” vs. “possible fluid”). To evaluate the separation, I first find cosine similarity, which is the dot product of two vectors divided by the product of their magnitudes, resulting in a value between -1 and 1 (Figure 3C). Then, the cosine distance measure is simply one minus the cosine similarity. The distance metric produces values between 0 and 2, where 0 signifies identical vectors and 2 indicates entirely dissimilar vectors.  
 
-Finally, I created an application to demonstrate how social media platforms can implement preventative strategies. The Chrome extension monitors the user’s Twitter feed for EC-related information. Once it is detected, information is sent to a backend Python Flask application. VADER and precomputed LDA topics are used to determine whether a post should be hidden and what sources of credible information should be provided instead. 
+![Screenshot 2024-07-23 185704](https://github.com/user-attachments/assets/49150c3e-d66c-46ef-ae34-e894efaaaa14)
 
-[AntiJUULTwitterDemo (1).webm](https://github.com/alex1xu/hsr23-analysis/assets/65417426/4d883624-f0f9-420a-8fde-fca1e2506730)
+The distance between opposite-modifier vectors is expected to be very large. As a control, I ensure that the distance between pairs of synonymous vectors (e.g. “evidence of fluid” vs. “there is fluid”) has negligible separation.
+
+### Retrieval Performance
+
+![Screenshot 2024-07-23 185627](https://github.com/user-attachments/assets/d01b8ef4-13ba-4b0e-8f26-1960a57855e4)
+
+One of the primary objectives of this pipeline is to enable the handling of more complex free-text queries. To evaluate the model’s performance across different levels of “complexity,” a measure of query complexity in web IR based on the number of variables (or terms) in a query by Jansen (2000) can be adapted. For this study, I define the metric complexity at N, or C@N, where N is the number of variables in an evaluation query. Examples of queries include “atelectasis” (C1), “bilateral deformities” (C2), “​​calcified upper lobe” (C3), “calcified lung granuloma and thoracic deformity” (C5), and “thoracic atherosclerosis and lower lung cicatrix and pulmonary emphysema and calcified granuloma” (C10).
+
+![Screenshot 2024-07-23 185729](https://github.com/user-attachments/assets/9f74a0a7-30b2-4e05-9e9b-d284e65b7d41)
 
 ## Conclusions
-
-As the most comprehensive study to date, this study marks a significant milestone in understanding the landscape of the EC epidemic through social media surveillance. Analysis indicates the success of brands in creating a positive image of ECs on Twitter. Factors potentially contributing to this phenomenon include marketing strategies, flavors, social appeal, the presence of echo chambers, the absence of central authorities, and the lack of implementation of T21 legislation. There were also observed significant changes in tweet patterns during headline events, such as the EVALI. 
-
-This is also the first study to identify the long-term, ​​growing polarization of EC opinions and to quantify the dynamics of EC information dissemination. This understanding of the dynamics surrounding EC conversations will guide policymakers and health organizations in implementing more effective preventive and cessation strategies to address the EC epidemic. In addition to these insights, I developed a plugin that can be integrated into social media platforms to facilitate corrective actions. Beyond this study, this research incorporated many methods to paint a complete picture of EC discourse and serves as a comprehensive framework for future social media surveillance studies.
