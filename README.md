@@ -9,7 +9,7 @@
 
 <details>
   <summary><b>Spoiler</b></summary>
-  In this study, I introduce a <b>new approach to the radiology report retrieval task</b>. This novel pipeline leverages named entity and relationship extraction techniques to construct comprehensive knowledge graph representations of radiology reports. Using bitmasking, subgraphs are systematically permuted to synthesize complex queries. Subsequently, the application of Label-wise Token Replacement augments original reports to create challenging negative samples for training. The triplet objective function is then used to train an SBERT model, initialized with PubMedBERT weights, on this weakly-supervised data. <b>CARe-BERT surpasses established benchmark approaches and is comparable with recent models proposed in recent literature in terms of mean average precision and mean recall</b>. Embedding space separation analysis demonstrates <b>advancement in the semantic comprehension of anatomical positions, negation, and condition descriptions</b>. It is also the <b>first model to be explicitly trained for various levels of query complexity</b>, showing greater improvement over benchmarks as query complexity increases. While CARe-BERT does not yet possess the level of robustness and accuracy required for direct deployment in healthcare settings, it lays a strong foundation as a blueprint for the development of more sophisticated, weakly-supervised approaches. As the capabilities of neural networks continue to advance, the demand for extensive, high-quality annotated data grows. Weakly-supervised approaches, like CARe-BERT, are important as they <b>circumvent the resource-intensive nature of traditional supervised learning</b>.
+  In this study, I introduce a <b>new approach to the weakly-supervised learning based radiology report retrieval task</b>. Weakly-supervised approaches, like CARe-BERT, are important as they <b>circumvent the resource-intensive nature of traditional supervised learning</b>. This novel pipeline leverages named entity and relationship extraction techniques to construct comprehensive knowledge graph representations of radiology reports. Using bitmasking, subgraphs are systematically permuted to synthesize complex queries. Subsequently, the application of Label-wise Token Replacement augments original reports to create challenging negative samples for training. The triplet objective function is then used to train an SBERT model on this generated data. <b>CARe-BERT surpasses established benchmark approaches and is comparable with recent models proposed in recent literature in terms of mean average precision and mean recall</b>. Embedding space separation analysis demonstrates <b>advancement in the semantic comprehension of anatomical positions, negation, and condition descriptions</b>. It is also the <b>first model to be explicitly trained for various levels of query complexity</b>, showing greater improvement over benchmarks as query complexity increases. While CARe-BERT does not yet possess the level of robustness and accuracy required for direct deployment in healthcare settings, it serves as a blueprint for the development of more sophisticated, weakly-supervised approaches.
 </details>
 
 ## Table of Contents
@@ -22,17 +22,21 @@
 
 ## Why?
 
-You may have had chest X-rays taken before, but what you might not know is that afterward, radiologists will detail their observations in a free-text document called a radiology report. This past summer I worked in a lab at a University Hospital, where researchers spend hundreds of hours reviewing databases of these reports for cohort studies.
+You may have had chest X-rays taken before, but what you might not know is that afterward, radiologists will detail their observations in a free-text document called a radiology report. These reports are subsequently queried for research, educational, and medical use.
+
+In my work at a university hospital, researchers often spend hundreds of hours reviewing report databases for cohort studies. In my work as an emergency medical technician, quick access to relevant patient reports is equally critical, so contributing to research in this field is important to me.
 
 ![Screenshot 2024-07-23 193745](https://github.com/user-attachments/assets/4f57d3ea-3fc3-4916-9eee-9b7936c20f42)
 
-In natural language processing research, developing software to automate this process is called the radiology report retrieval task. Given a free text query and a collection of radiology reports, how can we create some algorithm that returns the reports relevant to the query?
+In natural language processing research, developing software to more accurately automate this query process is called the radiology report retrieval task.
+
+_Given a free text query and a collection of radiology reports, how can we create some algorithm that returns the reports relevant to the query?_
 
 ![Screenshot 2024-07-23 193754](https://github.com/user-attachments/assets/90484424-8df6-48f8-96e9-82c16899fd0f)
 
-**Vector space** approaches are the major focus of current research.
+**Vector space** approaches are a major focus of current research.
 
-How does it work? Let’s imagine a high-dimensional space. Vector Space models represent each report and query as a vector, or embedding, in this space where the position stores the text’s meaning. Now, the cosine of the angle between the embeddings of reports to the query represents their similarity. Ideally, the related queries and reports are close while irrelated pairs are distant.
+Let’s imagine a high-dimensional space. Vector Space models represent each report and query as a vector, or embedding, in this space where the position stores the text’s meaning. The cosine of the angle between the embeddings of reports to the query represents their similarity. Ideally, the related queries and reports are close while irrelated pairs are distant.
 
 https://github.com/user-attachments/assets/c0aeec47-f57a-4183-8401-9278081a097f
 
